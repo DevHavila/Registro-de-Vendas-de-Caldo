@@ -33,6 +33,8 @@
 
         <activity android:name=".entities.HistoricoActivity"
             android:exported="true"/>
+        <activity android:name=".entities.LeitorActivity"
+            android:exported="true"/>
     </application>
 
 </manifest>
