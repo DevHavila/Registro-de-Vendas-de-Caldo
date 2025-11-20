@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -36,33 +37,33 @@ public class MainActivity extends AppCompatActivity {
         editCaldo7 = findViewById(R.id.caldo7);
         editLitro = findViewById(R.id.litro);
 
-        int caldo12 = safePaserInt(editCaldo12.getText().toString()) * 12;
-        int caldo7 = safePaserInt(editCaldo7.getText().toString()) * 7;
-        int litro = safePaserInt(editLitro.getText().toString()) * 16;
+        int caldo12 = safePaserInt(editCaldo12.getText().toString());
+        int caldo7 = safePaserInt(editCaldo7.getText().toString());
+        int litro = safePaserInt(editLitro.getText().toString());
 
         txtResultado = findViewById(R.id.txtResultado);
 
     }
 
-    public void svBotton(View view){
-         try {
-             int caldo12 = safePaserInt(editCaldo12.getText().toString()) * 12;
-             int caldo7 = safePaserInt(editCaldo7.getText().toString()) * 7;
-             int litro = safePaserInt(editLitro.getText().toString()) * 16;
+        public void svBotton(View view){
+             try {
+                 int caldo12 = safePaserInt(editCaldo12.getText().toString()) * 12;
+                 int caldo7 = safePaserInt(editCaldo7.getText().toString()) * 7;
+                 int litro = safePaserInt(editLitro.getText().toString()) * 16;
 
-             caldo = new Vendas(caldo12,caldo7,litro);
+                 caldo = new Vendas(caldo12,caldo7,litro);
 
-             txtResultado.setText(caldo.toString());
+                 txtResultado.setText(caldo.toString());
 
-             String registro = caldo.toString();
+                 String registro = caldo.toString();
 
-             salvarVendaDiaria(registro);
+                 salvarVendaDiaria(registro);
 
-         } catch (RuntimeException e){
-             txtResultado.setText("Unexpectded error:" + e);
-         }
+             } catch (RuntimeException e){
+                 txtResultado.setText("Unexpectded error:" + e);
+             }
 
-    }
+        }
 
     public int safePaserInt(String value){
         try {
@@ -73,29 +74,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String getNomeArquivo(){
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
         return sdf.format(new Date()) + "txt";
     }
 
-    private void salvarVendaDiaria(String texto){
-        try{
-            String nomeArquivo = getNomeArquivo();
-            FileOutputStream fos = openFileOutput(nomeArquivo, MODE_APPEND);
+    private void salvarVendaDiaria(String texto) {
+        try {
+            String nome = getNomeArquivo();
+            FileOutputStream fos = openFileOutput(nome, MODE_PRIVATE);
             fos.write((texto + "\n").getBytes());
             fos.close();
-
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void abrirHistorico(View view) {
         Intent intent = new Intent(this, HistoricoActivity.class);
-        startActivity(intent);
-    }
-
-    public void abrirLeitor(View view) {
-        Intent intent = new Intent(this, LeitorActivity.class);
         startActivity(intent);
     }
 

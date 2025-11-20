@@ -2,6 +2,7 @@ package com.example.caldodecana.entities;
 
 import static android.content.Intent.getIntent;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.caldodecana.MainActivity;
 import com.example.caldodecana.R;
 
 import java.io.BufferedReader;
@@ -39,6 +41,13 @@ public class LeitorActivity extends AppCompatActivity {
         somarTotalDoDia(nomeArquivo);
 
         btnExportar.setOnClickListener(v -> exportarWhatsApp(nomeArquivo));
+
+        @SuppressLint({"MissingInflatedId", "LocalSuppress"}) Button btn = findViewById(R.id.ewBotton);
+        btn.setOnClickListener(v -> {
+            Intent intent = new Intent(this, HistoricoActivity.class);
+            startActivity(intent);
+        });
+
     }
 
     private void lerArquivo(String nomeArquivo) {
@@ -126,4 +135,5 @@ public class LeitorActivity extends AppCompatActivity {
         br.close();
         fw.close();
     }
+
 }

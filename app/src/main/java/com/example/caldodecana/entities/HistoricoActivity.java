@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.GridView;
 
 
@@ -21,7 +22,7 @@ public class HistoricoActivity extends AppCompatActivity {
 
     GridView gridArquivo;
    @SuppressLint("MissingInflatedId")
-   protected void onCreat(Bundle savedInstanceState) {
+   protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_historico);
@@ -50,11 +51,15 @@ public class HistoricoActivity extends AppCompatActivity {
                startActivity(intent);
            }
        });
+
+       Button btn = findViewById(R.id.btnVotarHistorico);
+       btn.setOnClickListener(v -> {
+           Intent intent = new Intent(this, MainActivity.class);
+           startActivity(intent);
+       });
+
     }
 
-    public void voltarHistorico(View view) {
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
-    }
+
 
 }
