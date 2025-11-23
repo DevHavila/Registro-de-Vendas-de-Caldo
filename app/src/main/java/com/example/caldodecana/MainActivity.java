@@ -15,6 +15,7 @@ import com.example.caldodecana.entities.HistoricoActivity;
 import com.example.caldodecana.entities.LeitorActivity;
 import com.example.caldodecana.entities.Vendas;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -22,7 +23,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    EditText editCaldo12, editCaldo7, editLitro, editSoma;
+    EditText editCaldo12, editCaldo7, editLitro, edtProduto, edtQuantidade, edtValor;
     TextView txtResultado;
 
     Vendas caldo;
@@ -45,19 +46,27 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
         public void svBotton(View view){
              try {
-                 int caldo12 = safePaserInt(editCaldo12.getText().toString()) * 12;
-                 int caldo7 = safePaserInt(editCaldo7.getText().toString()) * 7;
-                 int litro = safePaserInt(editLitro.getText().toString()) * 16;
+                 int caldo12 = safePaserInt(editCaldo12.getText().toString());
+                 int caldo7 = safePaserInt(editCaldo7.getText().toString());
+                 int litro = safePaserInt(editLitro.getText().toString());
 
                  caldo = new Vendas(caldo12,caldo7,litro);
+                 caldo.contador(caldo12,caldo7,litro);
 
                  txtResultado.setText(caldo.toString());
 
                  String registro = caldo.toString();
 
                  salvarVendaDiaria(registro);
+
+                 editCaldo12.setText("");
+                 editCaldo7.setText("");
+                 editLitro.setText("");
+
+                 editCaldo12.requestFocus();
 
              } catch (RuntimeException e){
                  txtResultado.setText("Unexpectded error:" + e);
@@ -78,13 +87,19 @@ public class MainActivity extends AppCompatActivity {
         return sdf.format(new Date()) + "txt";
     }
 
-    private void salvarVendaDiaria(String texto) {
-        try {
-            String nome = getNomeArquivo();
-            FileOutputStream fos = openFileOutput(nome, MODE_PRIVATE);
+    private void salvarVendaDiaria(String texto){
+        try{
+            File pastaDia = getPastaDoDia();
+
+            String nomeArquivo = getProximoNomeArquivo(pastaDia);
+
+            File arquivo = new File(pastaDia, nomeArquivo);
+
+            FileOutputStream fos = new FileOutputStream(arquivo, false);
             fos.write((texto + "\n").getBytes());
             fos.close();
-        } catch (Exception e) {
+
+        }catch (Exception e){
             e.printStackTrace();
         }
     }
@@ -92,6 +107,40 @@ public class MainActivity extends AppCompatActivity {
     public void abrirHistorico(View view) {
         Intent intent = new Intent(this, HistoricoActivity.class);
         startActivity(intent);
+    }
+
+    private String getProximoNomeArquivo(File pastaDia) {
+        File[] arquivos = pastaDia.listFiles();
+
+        int maiorNumero = 0;
+
+        if (arquivos != null) {
+            for (File arq : arquivos) {
+                String nome = arq.getName();
+
+                if (nome.startsWith("venda_") && nome.endsWith(".txt")) {
+                    try {
+                        int num = Integer.parseInt(nome.replace("venda_", "").replace(".txt", ""));
+                        if (num > maiorNumero) maiorNumero = num;
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+
+        return "venda_" + (maiorNumero + 1) + ".txt";
+    }
+
+    private File getPastaDoDia() {
+        String data = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                .format(new Date());
+
+        File pastaDia = new File(getFilesDir(), data);
+
+        if (!pastaDia.exists()) {
+            pastaDia.mkdirs(); // cria a pasta se não existir
+        }
+
+        return pastaDia;
     }
 
 }

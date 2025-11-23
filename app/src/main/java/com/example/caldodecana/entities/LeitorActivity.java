@@ -1,13 +1,13 @@
 package com.example.caldodecana.entities;
 
-import static android.content.Intent.getIntent;
-
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -17,32 +17,36 @@ import com.example.caldodecana.R;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 public class LeitorActivity extends AppCompatActivity {
-
-    TextView txtConteudo, txtTotalDia;
+    private String dataSelecionada;
+    TextView txtTotalDia, txtTotalVendas;
     Button btnExportar;
-    String nomeArquivo;
+    String nomePasta;
+
+    TextView txtResultado;
+    private TextView txtLeitura;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_leitor);
 
-        txtConteudo = findViewById(R.id.txtConteudo);
+        txtTotalVendas = findViewById(R.id.totalVendas);
         txtTotalDia = findViewById(R.id.txtTotalDia);
         btnExportar = findViewById(R.id.btnExportar);
 
-        nomeArquivo = getIntent().getStringExtra("arquivo");
+        nomePasta = getIntent().getStringExtra("arquivo");
 
-        lerArquivo(nomeArquivo);
-        somarTotalDoDia(nomeArquivo);
+        dataSelecionada = nomePasta;
 
-        btnExportar.setOnClickListener(v -> exportarWhatsApp(nomeArquivo));
 
-        @SuppressLint({"MissingInflatedId", "LocalSuppress"}) Button btn = findViewById(R.id.ewBotton);
+        btnExportar.setOnClickListener(v -> exportarWhatsApp(nomePasta));
+
+        @SuppressLint({"MissingInflatedId", "LocalSuppress"}) Button btn = findViewById(R.id.btnVotarHistorico);
         btn.setOnClickListener(v -> {
             Intent intent = new Intent(this, HistoricoActivity.class);
             startActivity(intent);
@@ -50,90 +54,126 @@ public class LeitorActivity extends AppCompatActivity {
 
     }
 
-    private void lerArquivo(String nomeArquivo) {
+    private void carregarComprovantesDoDia() {
         try {
-            FileInputStream fis = openFileInput(nomeArquivo);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
+            File pasta = new File(getFilesDir(), dataSelecionada);
 
-            StringBuilder sb = new StringBuilder();
-            String linha;
-
-            while ((linha = reader.readLine()) != null) {
-                sb.append(linha).append("\n");
+            if (!pasta.exists() || !pasta.isDirectory()) {
+                txtTotalDia.setText("Nenhuma venda encontrada.");
+                return;
             }
 
-            txtConteudo.setText(sb.toString());
-            fis.close();
+            File[] arquivos = pasta.listFiles();
+
+            if (arquivos == null || arquivos.length == 0) {
+                txtTotalDia.setText("Nenhuma venda encontrada.");
+                return;
+            }
+
+            StringBuilder conteudo = new StringBuilder();
+            double totalDia = 0.0;
+
+            for (File arq : arquivos) {
+                conteudo.append("==== COMPROVANTE ====\n");
+
+                BufferedReader br = new BufferedReader(new FileReader(arq));
+                String linha;
+                double totalVenda = 0.0;
+
+                while ((linha = br.readLine()) != null) {
+                    conteudo.append(linha).append("\n");
+
+                    if (linha.contains("Total valor: R$")) {
+                        try {
+                            String v = linha.replace("Total valor: R$", "").trim();
+                            totalVenda = Double.parseDouble(v);
+
+
+
+                        } catch (Exception ignored) {}
+                    }
+                }
+
+                totalDia += totalVenda;
+
+
+                br.close();
+                conteudo.append("\n-----------------------------\n\n");
+            }
+
+            conteudo.append("\nTOTAL DO DIA: R$ ").append(String.format("%.2f", totalDia));
+
+            txtTotalDia.setText(conteudo.toString());
 
         } catch (Exception e) {
-            txtConteudo.setText("Erro: " + e);
+            txtTotalDia.setText("Erro ao ler vendas: " + e.getMessage());
         }
     }
 
-    // SOMA TOTAL DO ARQUIVO
-    private void somarTotalDoDia(String nomeArquivo) {
-        double total = 0;
+    @Override
+    protected void onResume() {
+        super.onResume();
+        carregarComprovantesDoDia();
+    }
 
+    private void exportarWhatsApp(String dataSelecionada) {
         try {
-            FileInputStream fis = openFileInput(nomeArquivo);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
 
-            String linha;
+            File pasta = new File(getFilesDir(), dataSelecionada);
 
-            while ((linha = reader.readLine()) != null) {
-                // TOTAL ESTÁ DEPOIS DE "total="
-                if (linha.contains("total=")) {
-                    String[] partes = linha.split("total=");
-                    double valor = Double.parseDouble(partes[1]);
-                    total += valor;
+            if (!pasta.exists() || !pasta.isDirectory()) {
+                Toast.makeText(this, "Pasta não encontrada!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            File[] arquivos = pasta.listFiles();
+
+            if (arquivos == null || arquivos.length == 0) {
+                Toast.makeText(this, "Nenhuma venda encontrada!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            StringBuilder conteudo = new StringBuilder();
+
+            double totalDia = 0.0;
+
+            for (File arq : arquivos) {
+                if (arq.isFile()) {
+
+                    conteudo.append("==== COMPROVANTE ====\n");
+
+                    BufferedReader br = new BufferedReader(new FileReader(arq));
+                    String linha;
+
+                    while ((linha = br.readLine()) != null) {
+                        conteudo.append(linha).append("\n");
+
+                        if (linha.contains("Valor:")) {
+                            try {
+                                String v = linha.replace("Valor:", "").trim();
+                                totalDia += Double.parseDouble(v);
+                            } catch (Exception ignored) {}
+                        }
+                    }
+
+                    br.close();
+
+                    conteudo.append("\n-----------------------------\n\n");
                 }
             }
 
-            txtTotalDia.setText("Total do dia: R$ " + String.format("%.2f", total));
-            fis.close();
+            conteudo.append("\nTOTAL DO DIA: R$ ").append(String.format("%.2f", totalDia));
+
+            Intent sendIntent = new Intent();
+            sendIntent.setAction(Intent.ACTION_SEND);
+            sendIntent.putExtra(Intent.EXTRA_TEXT, conteudo.toString());
+            sendIntent.setType("text/plain");
+
+            startActivity(Intent.createChooser(sendIntent, "Enviar vendas"));
 
         } catch (Exception e) {
-            txtTotalDia.setText("Erro ao somar: " + e);
+            txtResultado.setText("Erro: " + e.getMessage());
         }
-    }
-
-    // EXPORTAR VIA WHATSAPP
-    private void exportarWhatsApp(String nomeArquivo) {
-        try {
-            File arquivo = new File(getFilesDir(), nomeArquivo);
-
-            // tornar o arquivo exportável via FileProvider
-            File cacheArquivo = new File(getExternalCacheDir(), nomeArquivo);
-            copiarArquivo(arquivo, cacheArquivo);
-
-            Uri uri = Uri.fromFile(cacheArquivo);
-
-            Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("text/plain");
-            intent.putExtra(Intent.EXTRA_STREAM, uri);
-            intent.putExtra(Intent.EXTRA_TEXT, "Relatório do dia: " + nomeArquivo);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-            intent.setPackage("com.whatsapp");
-
-            startActivity(intent);
-
-        } catch (Exception e) {
-            txtConteudo.setText("Erro ao exportar: " + e);
-        }
-    }
-
-    private void copiarArquivo(File origem, File destino) throws Exception {
-        FileWriter fw = new FileWriter(destino);
-        BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(origem)));
-
-        String linha;
-        while ((linha = br.readLine()) != null) {
-            fw.write(linha + "\n");
-        }
-
-        br.close();
-        fw.close();
     }
 
 }
