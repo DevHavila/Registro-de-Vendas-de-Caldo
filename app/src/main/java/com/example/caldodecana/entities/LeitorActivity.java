@@ -23,26 +23,28 @@ import java.util.ArrayList;
 
 public class LeitorActivity extends AppCompatActivity {
     private String dataSelecionada;
-    TextView txtTotalDia, txtTotalVendas;
+    TextView txtTotalDia, txtTotalVendas, txtTotalSomado;
     Button btnExportar;
     String nomePasta;
-
     TextView txtResultado;
     private TextView txtLeitura;
+    Button btnApagarPasta;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_leitor);
 
-        txtTotalVendas = findViewById(R.id.totalVendas);
+        txtTotalSomado = findViewById(R.id.txtTotalSomado);
         txtTotalDia = findViewById(R.id.txtTotalDia);
         btnExportar = findViewById(R.id.btnExportar);
+
+        btnApagarPasta = findViewById(R.id.btnApagarPasta);
+        btnApagarPasta.setOnClickListener(v -> confirmarExclusao());
 
         nomePasta = getIntent().getStringExtra("arquivo");
 
         dataSelecionada = nomePasta;
-
 
         btnExportar.setOnClickListener(v -> exportarWhatsApp(nomePasta));
 
@@ -52,6 +54,51 @@ public class LeitorActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+    }
+    private void confirmarExclusao() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Apagar pasta?")
+                .setMessage("Tem certeza que deseja apagar a pasta " + dataSelecionada + "?")
+                .setPositiveButton("Sim", (dialog, which) -> apagarPasta())
+                .setNegativeButton("Não", null)
+                .show();
+    }
+
+    private void apagarPasta() {
+        try {
+            File pasta = new File(getFilesDir(), dataSelecionada);
+
+            if (!pasta.exists()) {
+                Toast.makeText(this, "Pasta não encontrada!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            boolean sucesso = deletarPastaRecursivamente(pasta);
+
+            if (sucesso) {
+                Toast.makeText(this, "Pasta apagada com sucesso!", Toast.LENGTH_LONG).show();
+                finish(); // Volta para a tela anterior
+            } else {
+                Toast.makeText(this, "Erro ao apagar a pasta!", Toast.LENGTH_SHORT).show();
+            }
+
+        } catch (Exception e) {
+            Toast.makeText(this, "Erro: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean deletarPastaRecursivamente(File file) {
+        if (file.isDirectory()) {
+            File[] filhos = file.listFiles();
+            if (filhos != null) {
+                for (File f : filhos) {
+                    if (!deletarPastaRecursivamente(f)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return file.delete();
     }
 
     private void carregarComprovantesDoDia() {
@@ -88,14 +135,13 @@ public class LeitorActivity extends AppCompatActivity {
                             String v = linha.replace("Total valor: R$", "").trim();
                             totalVenda = Double.parseDouble(v);
 
-
+                            txtTotalVendas.setText((int) totalVenda);
 
                         } catch (Exception ignored) {}
                     }
                 }
 
                 totalDia += totalVenda;
-
 
                 br.close();
                 conteudo.append("\n-----------------------------\n\n");
@@ -104,6 +150,7 @@ public class LeitorActivity extends AppCompatActivity {
             conteudo.append("\nTOTAL DO DIA: R$ ").append(String.format("%.2f", totalDia));
 
             txtTotalDia.setText(conteudo.toString());
+            txtTotalSomado.setText(String.format("%.2f", totalDia));
 
         } catch (Exception e) {
             txtTotalDia.setText("Erro ao ler vendas: " + e.getMessage());
