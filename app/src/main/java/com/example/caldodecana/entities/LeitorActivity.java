@@ -102,6 +102,7 @@ public class LeitorActivity extends AppCompatActivity {
     }
 
     private void carregarComprovantesDoDia() {
+
         try {
             File pasta = new File(getFilesDir(), dataSelecionada);
 
@@ -132,13 +133,19 @@ public class LeitorActivity extends AppCompatActivity {
 
                     if (linha.contains("Total valor: R$")) {
                         try {
-                            String v = linha.replace("Total valor: R$", "").trim();
+                            String v = linha.replace("Total valor:", "")
+                                    .replace("R$", "")
+                                    .replace(" ", "")
+                                    .replace(",", ".")
+                                    .trim();
+
                             totalVenda = Double.parseDouble(v);
 
-                            txtTotalVendas.setText((int) totalVenda);
-
-                        } catch (Exception ignored) {}
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
+
                 }
 
                 totalDia += totalVenda;
@@ -195,9 +202,9 @@ public class LeitorActivity extends AppCompatActivity {
                     while ((linha = br.readLine()) != null) {
                         conteudo.append(linha).append("\n");
 
-                        if (linha.contains("Valor:")) {
+                        if (linha.contains("Total valor: R$")) {
                             try {
-                                String v = linha.replace("Valor:", "").trim();
+                                String v = linha.replace("Total valor: R$", "").trim().replace(",", ".");
                                 totalDia += Double.parseDouble(v);
                             } catch (Exception ignored) {}
                         }
