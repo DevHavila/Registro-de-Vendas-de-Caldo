@@ -1,6 +1,5 @@
 package com.example.caldodecana.entities;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
@@ -9,26 +8,27 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.caldodecana.MainActivity;
 import com.example.caldodecana.R;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 public class LeitorActivity extends AppCompatActivity {
+
     private String dataSelecionada;
-    TextView txtTotalDia, txtTotalVendas, txtTotalSomado;
-    Button btnExportar;
-    String nomePasta;
-    TextView txtResultado;
-    private TextView txtLeitura;
-    Button btnApagarPasta;
+
+    TextView txtTotalSomado;
+    Button btnExportar, btnApagarPasta;
+
+    private ListView listaComprovantes;
+    private ArrayList<File> listaArquivos = new ArrayList<>();
+    private ArrayList<String> listaConteudos = new ArrayList<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,133 +36,132 @@ public class LeitorActivity extends AppCompatActivity {
         setContentView(R.layout.activity_leitor);
 
         txtTotalSomado = findViewById(R.id.txtTotalSomado);
-        txtTotalDia = findViewById(R.id.txtTotalDia);
         btnExportar = findViewById(R.id.btnExportar);
-
         btnApagarPasta = findViewById(R.id.btnApagarPasta);
-        btnApagarPasta.setOnClickListener(v -> confirmarExclusao());
+        listaComprovantes = findViewById(R.id.listaComprovantes);
 
-        nomePasta = getIntent().getStringExtra("arquivo");
+        Button btnVoltar = findViewById(R.id.btnVotarHistorico);
+        btnVoltar.setOnClickListener(v -> finish());
 
-        dataSelecionada = nomePasta;
+        dataSelecionada = getIntent().getStringExtra("arquivo");
 
-        btnExportar.setOnClickListener(v -> exportarWhatsApp(nomePasta));
+        btnExportar.setOnClickListener(v -> exportarWhatsApp());
+        btnApagarPasta.setOnClickListener(v -> confirmarExclusaoPasta());
 
-        @SuppressLint({"MissingInflatedId", "LocalSuppress"}) Button btn = findViewById(R.id.btnVotarHistorico);
-        btn.setOnClickListener(v -> {
-            Intent intent = new Intent(this, HistoricoActivity.class);
-            startActivity(intent);
+        // 👆 Clique normal → mostrar comprovante
+        listaComprovantes.setOnItemClickListener((parent, view, position, id) -> {
+            File arquivo = listaArquivos.get(position);
+            mostrarComprovante(arquivo);
         });
 
-    }
-    private void confirmarExclusao() {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Apagar pasta?")
-                .setMessage("Tem certeza que deseja apagar a pasta " + dataSelecionada + "?")
-                .setPositiveButton("Sim", (dialog, which) -> apagarPasta())
-                .setNegativeButton("Não", null)
-                .show();
+        // 👇 Clique longo → apagar diretamente
+        listaComprovantes.setOnItemLongClickListener((parent, view, position, id) -> {
+            confirmarExclusaoArquivo(listaArquivos.get(position));
+            return true;
+        });
     }
 
-    private void apagarPasta() {
+
+    // ============================================================
+    // MOSTRAR COMPROVANTE
+    // ============================================================
+    private void mostrarComprovante(File arquivo) {
         try {
-            File pasta = new File(getFilesDir(), dataSelecionada);
+            StringBuilder conteudo = new StringBuilder();
 
-            if (!pasta.exists()) {
-                Toast.makeText(this, "Pasta não encontrada!", Toast.LENGTH_SHORT).show();
-                return;
+            BufferedReader br = new BufferedReader(new FileReader(arquivo));
+            String linha;
+            while ((linha = br.readLine()) != null) {
+                conteudo.append(linha).append("\n");
             }
+            br.close();
 
-            boolean sucesso = deletarPastaRecursivamente(pasta);
-
-            if (sucesso) {
-                Toast.makeText(this, "Pasta apagada com sucesso!", Toast.LENGTH_LONG).show();
-                finish(); // Volta para a tela anterior
-            } else {
-                Toast.makeText(this, "Erro ao apagar a pasta!", Toast.LENGTH_SHORT).show();
-            }
+            new AlertDialog.Builder(this)
+                    .setTitle("Comprovante")
+                    .setMessage(conteudo.toString())
+                    .setPositiveButton("Apagar", (d, w) -> apagarArquivo(arquivo))
+                    .setNegativeButton("Fechar", null)
+                    .show();
 
         } catch (Exception e) {
             Toast.makeText(this, "Erro: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
-    private boolean deletarPastaRecursivamente(File file) {
-        if (file.isDirectory()) {
-            File[] filhos = file.listFiles();
-            if (filhos != null) {
-                for (File f : filhos) {
-                    if (!deletarPastaRecursivamente(f)) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return file.delete();
+    private void confirmarExclusaoArquivo(File arquivo) {
+        new AlertDialog.Builder(this)
+                .setTitle("Apagar comprovante?")
+                .setMessage("Deseja apagar este comprovante?")
+                .setPositiveButton("Sim", (d, w) -> apagarArquivo(arquivo))
+                .setNegativeButton("Não", null)
+                .show();
     }
 
+    private void apagarArquivo(File arquivo) {
+        if (arquivo.delete()) {
+            Toast.makeText(this, "Comprovante apagado!", Toast.LENGTH_SHORT).show();
+            carregarComprovantesDoDia();
+        } else {
+            Toast.makeText(this, "Erro ao apagar arquivo!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    // ============================================================
+    // CARREGAR COMPROVANTES DO DIA
+    // ============================================================
     private void carregarComprovantesDoDia() {
-
         try {
-            File pasta = new File(getFilesDir(), dataSelecionada);
+            listaArquivos.clear();
+            listaConteudos.clear();
 
-            if (!pasta.exists() || !pasta.isDirectory()) {
-                txtTotalDia.setText("Nenhuma venda encontrada.");
-                return;
-            }
+            File pasta = new File(getFilesDir(), dataSelecionada);
+            if (!pasta.exists()) return;
 
             File[] arquivos = pasta.listFiles();
 
-            if (arquivos == null || arquivos.length == 0) {
-                txtTotalDia.setText("Nenhuma venda encontrada.");
-                return;
-            }
+            double soma = 0.0;
 
-            StringBuilder conteudo = new StringBuilder();
-            double totalDia = 0.0;
+            if (arquivos != null) {
+                for (File f : arquivos) {
+                    if (f.isFile()) {
 
-            for (File arq : arquivos) {
-                conteudo.append("==== COMPROVANTE ====\n");
+                        // Salva arquivo
+                        listaArquivos.add(f);
 
-                BufferedReader br = new BufferedReader(new FileReader(arq));
-                String linha;
-                double totalVenda = 0.0;
+                        // Lê conteúdo para mostrar na lista
+                        StringBuilder texto = new StringBuilder();
+                        BufferedReader br = new BufferedReader(new FileReader(f));
+                        String linha;
 
-                while ((linha = br.readLine()) != null) {
-                    conteudo.append(linha).append("\n");
+                        while ((linha = br.readLine()) != null) {
+                            texto.append(linha).append("\n");
 
-                    if (linha.contains("Total valor: R$")) {
-                        try {
-                            String v = linha.replace("Total valor:", "")
-                                    .replace("R$", "")
-                                    .replace(" ", "")
-                                    .replace(",", ".")
-                                    .trim();
-
-                            totalVenda = Double.parseDouble(v);
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            if (linha.contains("Total valor: R$")) {
+                                String v = linha.replace("Total valor: R$", "")
+                                        .replace(",", ".").trim();
+                                soma += Double.parseDouble(v);
+                            }
                         }
+                        br.close();
+
+                        listaConteudos.add(texto.toString());
                     }
-
                 }
-
-                totalDia += totalVenda;
-
-                br.close();
-                conteudo.append("\n-----------------------------\n\n");
             }
 
-            conteudo.append("\nTOTAL DO DIA: R$ ").append(String.format("%.2f", totalDia));
+            // Mostra conteúdo dos comprovantes na lista
+            listaComprovantes.setAdapter(
+                    new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listaConteudos)
+            );
 
-            txtTotalDia.setText(conteudo.toString());
-            txtTotalSomado.setText(String.format("%.2f", totalDia));
+            txtTotalSomado.setText("R$ " + String.format("%.2f", soma));
 
         } catch (Exception e) {
-            txtTotalDia.setText("Erro ao ler vendas: " + e.getMessage());
+            Toast.makeText(this, "Erro: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
+
 
     @Override
     protected void onResume() {
@@ -170,16 +169,13 @@ public class LeitorActivity extends AppCompatActivity {
         carregarComprovantesDoDia();
     }
 
-    private void exportarWhatsApp(String dataSelecionada) {
+
+    // ============================================================
+    // EXPORTAR PARA WHATSAPP
+    // ============================================================
+    private void exportarWhatsApp() {
         try {
-
             File pasta = new File(getFilesDir(), dataSelecionada);
-
-            if (!pasta.exists() || !pasta.isDirectory()) {
-                Toast.makeText(this, "Pasta não encontrada!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
             File[] arquivos = pasta.listFiles();
 
             if (arquivos == null || arquivos.length == 0) {
@@ -188,46 +184,74 @@ public class LeitorActivity extends AppCompatActivity {
             }
 
             StringBuilder conteudo = new StringBuilder();
-
             double totalDia = 0.0;
 
             for (File arq : arquivos) {
-                if (arq.isFile()) {
+                conteudo.append("==== COMPROVANTE ====\n");
+                BufferedReader br = new BufferedReader(new FileReader(arq));
 
-                    conteudo.append("==== COMPROVANTE ====\n");
+                String linha;
+                while ((linha = br.readLine()) != null) {
+                    conteudo.append(linha).append("\n");
 
-                    BufferedReader br = new BufferedReader(new FileReader(arq));
-                    String linha;
-
-                    while ((linha = br.readLine()) != null) {
-                        conteudo.append(linha).append("\n");
-
-                        if (linha.contains("Total valor: R$")) {
-                            try {
-                                String v = linha.replace("Total valor: R$", "").trim().replace(",", ".");
-                                totalDia += Double.parseDouble(v);
-                            } catch (Exception ignored) {}
-                        }
+                    if (linha.contains("Total valor: R$")) {
+                        String v = linha.replace("Total valor: R$", "")
+                                .replace(",", ".").trim();
+                        totalDia += Double.parseDouble(v);
                     }
-
-                    br.close();
-
-                    conteudo.append("\n-----------------------------\n\n");
                 }
+                br.close();
+                conteudo.append("\n-----------------------------\n\n");
             }
 
             conteudo.append("\nTOTAL DO DIA: R$ ").append(String.format("%.2f", totalDia));
 
-            Intent sendIntent = new Intent();
-            sendIntent.setAction(Intent.ACTION_SEND);
+            Intent sendIntent = new Intent(Intent.ACTION_SEND);
             sendIntent.putExtra(Intent.EXTRA_TEXT, conteudo.toString());
             sendIntent.setType("text/plain");
 
             startActivity(Intent.createChooser(sendIntent, "Enviar vendas"));
 
         } catch (Exception e) {
-            txtResultado.setText("Erro: " + e.getMessage());
+            Toast.makeText(this, "Erro: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 
+
+    // ============================================================
+    // EXCLUIR PASTA INTEIRA
+    // ============================================================
+    private void confirmarExclusaoPasta() {
+        new AlertDialog.Builder(this)
+                .setTitle("Apagar todas as vendas?")
+                .setMessage("Isso vai apagar TODOS os comprovantes do dia.")
+                .setPositiveButton("Sim", (d, w) -> apagarPasta())
+                .setNegativeButton("Não", null)
+                .show();
+    }
+
+    private void apagarPasta() {
+        File pasta = new File(getFilesDir(), dataSelecionada);
+
+        boolean sucesso = deletarPastaRecursivamente(pasta);
+
+        if (sucesso) {
+            Toast.makeText(this, "Pasta apagada!", Toast.LENGTH_LONG).show();
+            finish();
+        } else {
+            Toast.makeText(this, "Erro ao apagar!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean deletarPastaRecursivamente(File file) {
+        if (file.isDirectory()) {
+            File[] filhos = file.listFiles();
+            if (filhos != null) {
+                for (File f : filhos) {
+                    if (!deletarPastaRecursivamente(f)) return false;
+                }
+            }
+        }
+        return file.delete();
+    }
 }

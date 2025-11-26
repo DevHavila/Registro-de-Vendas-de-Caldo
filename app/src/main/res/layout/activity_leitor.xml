@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:padding="8dp">
 
-
+    <!-- Botão Voltar -->
     <Button
         android:id="@+id/btnVotarHistorico"
         android:layout_width="wrap_content"
@@ -15,90 +14,64 @@
         android:text="Voltar"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_margin="16dp" />
+        android:layout_margin="12dp" />
 
+    <!-- Botão Apagar Tudo -->
+    <Button
+        android:id="@+id/btnApagarPasta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Apagar Tudo"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="12dp" />
+
+    <!-- Título -->
     <TextView
         android:id="@+id/textView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
         android:text="Vendas do Dia"
-        android:textSize="22sp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        android:textSize="22sp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/btnVotarHistorico"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnVotarHistorico" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <ScrollView
-        android:id="@+id/scrollView"
-        android:layout_width="401dp"
-        android:layout_height="496dp"
-        android:padding="8dp"
-        app:layout_constraintBottom_toTopOf="@id/btnExportar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.47"
-        app:layout_constraintStart_toStartOf="parent"
+    <!-- Lista de Comprovantes -->
+    <ListView
+        android:id="@+id/listaComprovantes"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:dividerHeight="14dp"
+        android:padding="6dp"
         app:layout_constraintTop_toBottomOf="@id/textView4"
-        app:layout_constraintVertical_bias="0.061">
-
-        <TextView
-            android:id="@+id/txtTotalDia"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="10dp"
-            android:textSize="18sp" />
-    </ScrollView>
-
-    <Button
-        android:id="@+id/btnExportar"
-        android:layout_width="179dp"
-        android:layout_height="61dp"
-        android:layout_margin="16dp"
-        android:text="Exportar WhatsApp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <TextView
-        android:id="@+id/textView5"
-        android:layout_width="137dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="20dp"
-        android:text="Vendas Total:"
-        android:textSize="20dp"
-        app:layout_constraintBottom_toTopOf="@+id/btnExportar"
-        app:layout_constraintEnd_toStartOf="@+id/txtTotalSomado"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/scrollView"
-        tools:ignore="MissingConstraints" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btnExportar" />
 
+    <!-- Total Somado -->
     <TextView
         android:id="@+id/txtTotalSomado"
-        android:layout_width="137dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="88dp"
-        android:text=""
-        android:textSize="20dp"
-        app:layout_constraintBottom_toTopOf="@+id/btnExportar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Total: R$ 0,00"
+        android:textSize="18sp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toTopOf="@id/btnExportar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/scrollView"
-        app:layout_constraintVertical_bias="0.523"
-        tools:ignore="MissingConstraints" />
+        android:layout_marginBottom="10dp" />
 
+    <!-- Botão Exportar -->
     <Button
-        android:id="@+id/btnApagarPasta"
-        android:layout_width="141dp"
-        android:layout_height="48dp"
+        android:id="@+id/btnExportar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Exportar WhatsApp"
         android:layout_margin="16dp"
-
-
-        android:layout_marginTop="20dp"
-        android:text="Apagar Pasta"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.969"
-        app:layout_constraintStart_toEndOf="@+id/btnVotarHistorico"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
