@@ -41,9 +41,9 @@ public class Vendas {
 
     @Override
     public String toString(){
-        return "\nCaldo de R$ 12 Quantidada ("+cont1+") R$ " + String.format("%.2f", caldo12)
-                + " \nCaldo de R$ 7 Quantidada ("+cont2+") R$ " + String.format("%.2f", caldo7)
-                + " \nLitro de R$ 16 Quantidada ("+cont3 +") R$ "+ String.format("%.2f", litro) + "\n"
+        return "\nCaldo de R$ 12 Quantidade ("+cont1+") R$ " + String.format("%.2f", caldo12)
+                + " \nCaldo de R$ 7 Quantidade ("+cont2+") R$ " + String.format("%.2f", caldo7)
+                + " \nLitro de R$ 16 Quantidade ("+cont3 +") R$ "+ String.format("%.2f", litro) + "\n"
                 + " \nTotal valor: R$ " + String.format("%.2f",getSaldo());
     }
 
